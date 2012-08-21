@@ -22,6 +22,17 @@ func init() {
 
 func root(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
+	u := user.Current(c)
+	if u == nil {
+		url, err := user.LoginURL(c, r.URL.String())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Location", url)
+		w.WriteHeader(http.StatusFound)
+		return
+	}
 	q := datastore.NewQuery("Greeting").Order("-Date").Limit(10)
 	greetings := make([]Greeting, 0, 10)
 	if _, err := q.GetAll(c, &greetings); err != nil {
@@ -39,12 +50,13 @@ const guestbookTemplateHTML = `
 <html>
   <body>
     {{range .}}
-      {{with .Author}}
-        <p><b>{{.}}</b> wrote:</p>
+      {{if .Author}}
+        <p><b>{{.Author}}</b> wrote @{{.Date}}: </p>
       {{else}}
-        <p>An anonymous person wrote:</p>
+        <p>An anonymous person wrote @{{.Date}}: </p>
       {{end}}
       <pre>{{.Content}}</pre>
+
     {{end}}
     <form action="/sign" method="post">
       <div><textarea name="content" rows="3" cols="60"></textarea></div>
