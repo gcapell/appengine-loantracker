@@ -38,35 +38,39 @@ const guestbookTemplateHTML = `
 `
 
 func init() {
-	http.HandleFunc("/", root)
-	http.HandleFunc("/sign", sign)
+	http.Handle("/", appHandler(root))
+	http.Handle("/sign", appHandler(sign))
 }
 
-func root(w http.ResponseWriter, r *http.Request) {
+type appHandler func(http.ResponseWriter, *http.Request) error
+
+func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if err := fn(w,r); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func root(w http.ResponseWriter, r *http.Request) error {
 	c := appengine.NewContext(r)
 	u := user.Current(c)
 	if u == nil {
 		url, err := user.LoginURL(c, r.URL.String())
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return err
 		}
 		w.Header().Set("Location", url)
 		w.WriteHeader(http.StatusFound)
-		return
+		return nil
 	}
 	q := datastore.NewQuery("Greeting").Order("-Date").Limit(10)
 	greetings := make([]Greeting, 0, 10)
 	if _, err := q.GetAll(c, &greetings); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return err
 	}
-	if err := guestbookTemplate.Execute(w, greetings); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	return  guestbookTemplate.Execute(w, greetings)
 }
 
-func sign(w http.ResponseWriter, r *http.Request) {
+func sign(w http.ResponseWriter, r *http.Request) error {
 	c := appengine.NewContext(r)
 	g := Greeting{
 		Content: r.FormValue("content"),
@@ -75,10 +79,9 @@ func sign(w http.ResponseWriter, r *http.Request) {
 	if u := user.Current(c); u != nil {
 		g.Author = u.String()
 	}
-	_, err := datastore.Put(c, datastore.NewIncompleteKey(c, "Greeting", nil), &g)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if _, err := datastore.Put(c, datastore.NewIncompleteKey(c, "Greeting", nil), &g); err != nil {
+		return err
 	}
 	http.Redirect(w, r, "/", http.StatusFound)
+	return nil
 }
