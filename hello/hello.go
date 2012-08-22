@@ -46,7 +46,7 @@ func ParseCents(s string) (Cents, error) {
 		return 0, fmt.Errorf("Bad dollar amount:%q", matches[1])
 	}
 	cents := 0
-	if len(matches)==3 {
+	if len(matches[2])>1 {
 		cents, err = strconv.Atoi(matches[2][1:])
 		if err != nil {
 			return 0, fmt.Errorf("ParseCents: Bad cents amount:%q in %q", matches[2], s)
@@ -55,7 +55,6 @@ func ParseCents(s string) (Cents, error) {
 
 	return Cents(dollars * 100 + cents), nil
 }
-
 
 var paymentTemplate = template.Must(template.New("book").Parse(paymentTemplateHTML))
 
@@ -122,13 +121,17 @@ func addPayment(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	dateString := r.FormValue("date")
-	log.Println("amount", amount, "date", dateString)
+
+	date, err := time.Parse("2 Jan 2006", r.FormValue("date"))
+	if err != nil {
+		return err
+	}
+	log.Println("amount", amount, "date", date)
 	userName := ""
 	if u := user.Current(c); u != nil {
 		userName = u.String()
 	}
-	p := Payment{time.Now(), userName, amount}
+	p := Payment{date, userName, amount}
 	if _, err := datastore.Put(c, datastore.NewIncompleteKey(c, "Payment", nil), &p); err != nil {
 		return err
 	}
