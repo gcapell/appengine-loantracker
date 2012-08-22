@@ -107,10 +107,20 @@ func root(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusFound)
 		return nil
 	}
-	q := datastore.NewQuery("Payment").Order("-Date").Limit(10)
-	payments := make([]Payment, 0, 10)
-	if _, err := q.GetAll(c, &payments); err != nil {
-		return err
+	q := datastore.NewQuery("Payment").Order("-Date")
+	
+	payments := make([]Payment, 0, 100)
+	for t := q.Run(c); ; {
+		var p Payment
+		key, err := t.Next(&p)
+		log.Println("key", key)
+		if err == datastore.Done {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		payments = append(payments, p)
 	}
 	return  paymentTemplate.Execute(w, payments)
 }
