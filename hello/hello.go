@@ -64,13 +64,16 @@ const paymentTemplateHTML = `
    <table>
     {{range .}}
 	<tr>
-	<td>{{.Amount}}</td>
+	<td align="right">{{.Amount}}</td>
 	<td>{{.Date.Format "15:04 2 Jan 2006"}}</td>
 	</tr>
 	{{end}}
+	</table>
     <form action="/addPayment" method="post">
-	  Amount: <input type="text" name="amount"><br>
-	  Date: <input type="text" name="date"><br>
+	<table>
+	 <tr><td> Amount: </td><td><input type="text" name="amount"></tßd></tr>
+	 <tr><td>Date: </td><td><input type="text" name="date"></td></tr>
+	</table>
       <div><input type="submit" value="Add amount"></div>
     </form>
   </body>
