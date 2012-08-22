@@ -28,6 +28,12 @@ type Payment struct {
 	Amount Cents
 }
 
+type RateChange struct {
+	Date 	time.Time
+	User	string
+	Rate	float32	// 3.5 -> 3.5%
+}
+
 func (c Cents) String() string {
 	dollars, cents := c/100, c%100
 	return fmt.Sprintf("$%d.%02d", dollars, cents)
@@ -76,14 +82,31 @@ const paymentTemplateHTML = `
 	</table>
       <div><input type="submit" value="Add amount"></div>
     </form>
+	<a href="/rate">Change interest rate</a>
   </body>
 </html>
 `
+var rateTemplate = template.Must(template.New("rate").Parse(rateTemplateHTML))
 
+const rateTemplateHTML = `
+<html>
+<body>
+<form action="/changeRate" method="post">
+<table>
+ <tr><td> Interest Rate: </td><td><input type="text" name="rate"></td></tr>
+ <tr><td>Date: </td><td><input type="text" name="date"></td></tr>
+</table>
+  <div><input type="submit" value="Update interest rate"></div>
+</form>
+</body>
+</html>
+`
 func init() {
 	http.HandleFunc("/favicon.ico", favicon)
 	http.Handle("/", appHandler(root))
 	http.Handle("/addPayment", appHandler(addPayment))
+	http.Handle("/rate", appHandler(rateForm))
+	http.Handle("/changeRate", appHandler(changeRate))
 }
 
 type appHandler func(http.ResponseWriter, *http.Request) error
@@ -98,6 +121,10 @@ func favicon(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "not found", http.StatusNotFound)
 }
 
+func rateForm(w http.ResponseWriter, r *http.Request) error {
+	return rateTemplate.Execute(w, nil)
+}
+
 func root(w http.ResponseWriter, r *http.Request) error {
 	c := appengine.NewContext(r)
 	u := user.Current(c)
@@ -110,7 +137,7 @@ func root(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusFound)
 		return nil
 	}
-	q := datastore.NewQuery("Payment").Order("-Date")
+	q := datastore.NewQuery("Payment").Order("Date")
 	
 	payments := make([]Payment, 0, 100)
 	for t := q.Run(c); ; {
@@ -126,6 +153,30 @@ func root(w http.ResponseWriter, r *http.Request) error {
 		payments = append(payments, p)
 	}
 	return  paymentTemplate.Execute(w, payments)
+}
+
+func changeRate(w http.ResponseWriter, r *http.Request) error {
+	c := appengine.NewContext(r)
+	rate, err := strconv.ParseFloat(r.FormValue("rate"), 32)
+	if err != nil {
+		return err
+	}
+
+	date, err := time.Parse("2 Jan 2006", r.FormValue("date"))
+	if err != nil {
+		return err
+	}
+	log.Println("rate", rate, "date", date)
+	userName := ""
+	if u := user.Current(c); u != nil {
+		userName = u.String()
+	}
+	p := RateChange{date, userName, float32(rate)}
+	if _, err := datastore.Put(c, datastore.NewIncompleteKey(c, "RateChange", nil), &p); err != nil {
+		return err
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
+	return nil
 }
 
 func addPayment(w http.ResponseWriter, r *http.Request) error {
