@@ -31,6 +31,10 @@ func (e EntryType) IsRateChange() bool {
 	return e == RateChange
 }
 
+func (e EntryType) IsLoan() bool {
+	return e == Loan
+}
+
 type Entry struct {
 	Date	time.Time
 	User	string
@@ -158,6 +162,9 @@ func addEntry(w http.ResponseWriter, r *http.Request, t EntryType) error{
 			return err
 		}
 		e.Amount = amount
+		if len(r.FormValue("IsLoan")) != 0 {
+			e.Type = Loan
+		}
 	case RateChange:
 		rate, err := strconv.ParseFloat(r.FormValue("rate"), 32)
 		if err != nil {

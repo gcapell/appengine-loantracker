@@ -15,7 +15,10 @@ const paymentTemplateHTML = `
 			<td>{{.Date.Format "2 Jan 2006"}}</td>
 			<td align="right">
 			{{if .Type.IsPayment}}
-				{{.Amount}}
+				Payment: {{.Amount}}
+			{{end}}
+			{{if .Type.IsLoan}}
+				Loan: {{.Amount}}
 			{{end}}
 			{{if .Type.IsRateChange}}
 				Rate change to: {{.Rate}}%
@@ -26,7 +29,8 @@ const paymentTemplateHTML = `
 	</table>
     <form action="/addPayment" method="post">
 	<table>
-	 <tr><td> Amount: </td><td><input type="text" name="amount"></tßd></tr>
+	 <tr><td> Amount: </td><td><input type="text" name="amount"></td>
+	<td><input type="checkbox" name="IsLoan">IsLoan</td></tr>
 	 <tr><td>Date: </td><td><input type="text" name="date"></td></tr>
 	</table>
       <div><input type="submit" value="Add amount"></div>
@@ -42,7 +46,9 @@ const rateTemplateHTML = `
 <body>
 <form action="/changeRate" method="post">
 <table>
- <tr><td> Interest Rate: </td><td><input type="text" name="rate"></td></tr>
+ <tr><td> Interest Rate: </td><td><input type="text" name="rate"></td>
+
+</tr>
  <tr><td>Date: </td><td><input type="text" name="date"></td></tr>
 </table>
   <div><input type="submit" value="Update interest rate"></div>
