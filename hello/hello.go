@@ -15,21 +15,11 @@ import (
 
 type Cents int
 
-type Greeting struct {
-	Author  string
-	Content string
-	Date    time.Time
-}
-
-type Payment struct {
+type Entry struct {
 	Date	time.Time
 	User	string
+	IsPayment bool
 	Amount Cents
-}
-
-type RateChange struct {
-	Date 	time.Time
-	User	string
 	Rate	float32	// 3.5 -> 3.5%
 }
 
@@ -98,20 +88,20 @@ func root(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusFound)
 		return nil
 	}
-	payments, err := getPayments(c)
+	entries, err := getEntries(c)
 	if err != nil {
 		return err
 	}
-	return  paymentTemplate.Execute(w, payments)
+	return  paymentTemplate.Execute(w, entries)
 }
 
-func getPayments(c appengine.Context) ([]Payment, error) {
-	q := datastore.NewQuery("Payment").Order("Date")
+func getEntries(c appengine.Context) ([]Entry, error) {
+	q := datastore.NewQuery("Entry").Order("Date")
 	
-	var payments []Payment
+	var entries []Entry
 	for t := q.Run(c); ; {
-		var p Payment
-		key, err := t.Next(&p)
+		var e Entry
+		key, err := t.Next(&e)
 		log.Println("key", key)
 		if err == datastore.Done {
 			break
@@ -119,54 +109,48 @@ func getPayments(c appengine.Context) ([]Payment, error) {
 		if err != nil {
 			return nil, err
 		}
-		payments = append(payments, p)
+		entries = append(entries, e)
 	}
-	return payments, nil
+	return entries, nil
 }
 
-
 func changeRate(w http.ResponseWriter, r *http.Request) error {
-	c := appengine.NewContext(r)
-	rate, err := strconv.ParseFloat(r.FormValue("rate"), 32)
-	if err != nil {
-		return err
-	}
-
-	date, err := time.Parse("2 Jan 2006", r.FormValue("date"))
-	if err != nil {
-		return err
-	}
-	log.Println("rate", rate, "date", date)
-	userName := ""
-	if u := user.Current(c); u != nil {
-		userName = u.String()
-	}
-	p := RateChange{date, userName, float32(rate)}
-	if _, err := datastore.Put(c, datastore.NewIncompleteKey(c, "RateChange", nil), &p); err != nil {
-		return err
-	}
-	http.Redirect(w, r, "/", http.StatusFound)
-	return nil
+	return addEntry(w,r, false)
 }
 
 func addPayment(w http.ResponseWriter, r *http.Request) error {
+	return addEntry(w,r, true)
+}
+
+func addEntry(w http.ResponseWriter, r *http.Request, isPayment bool) error{
 	c := appengine.NewContext(r)
-	amount, err := ParseCents(r.FormValue("amount"))
-	if err != nil {
-		return err
+	userName := ""
+	if u := user.Current(c); u != nil {
+		userName = u.String()
 	}
 
 	date, err := time.Parse("2 Jan 2006", r.FormValue("date"))
 	if err != nil {
 		return err
 	}
-	log.Println("amount", amount, "date", date)
-	userName := ""
-	if u := user.Current(c); u != nil {
-		userName = u.String()
+
+	e := Entry{Date:date, User:userName, IsPayment:isPayment}
+	if isPayment {
+		amount, err := ParseCents(r.FormValue("amount"))
+		if err != nil {
+			return err
+		}
+		e = Entry{date, userName, isPayment, amount, 0}
+	} else {
+		rate, err := strconv.ParseFloat(r.FormValue("rate"), 32)
+		if err != nil {
+			return err
+		}
+		e = Entry{date, userName, isPayment, 0, float32(rate)}
 	}
-	p := Payment{date, userName, amount}
-	if _, err := datastore.Put(c, datastore.NewIncompleteKey(c, "Payment", nil), &p); err != nil {
+
+	log.Println("entry", e)
+	if _, err := datastore.Put(c, datastore.NewIncompleteKey(c, "Entry", nil), &e); err != nil {
 		return err
 	}
 	http.Redirect(w, r, "/", http.StatusFound)

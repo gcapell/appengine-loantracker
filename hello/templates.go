@@ -8,13 +8,13 @@ var paymentTemplate = template.Must(template.New("book").Parse(paymentTemplateHT
 
 const paymentTemplateHTML = `
 <html>
-  <body>
-   <table>
-    {{range .}}
-	<tr>
-	<td align="right">{{.Amount}}</td>
-	<td>{{.Date.Format "15:04 2 Jan 2006"}}</td>
-	</tr>
+	<body>
+	<table>
+	{{range .}}
+		<tr>
+			<td align="right">{{if .IsPayment}}{{.Amount}}{{else}}{{.Rate}}%{{end}}</td>
+			<td>{{.Date.Format "15:04 2 Jan 2006"}}</td>
+		</tr>
 	{{end}}
 	</table>
     <form action="/addPayment" method="post">
