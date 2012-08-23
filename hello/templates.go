@@ -9,13 +9,16 @@ var paymentTemplate = template.Must(template.New("book").Parse(paymentTemplateHT
 const paymentTemplateHTML = `
 <html>
 	<body>
-	<table>
+	<table border="1">
 	{{range .}}
 		<tr>
 			<td>{{.Date.Format "2 Jan 2006"}}</td>
 			<td align="right">
 			{{if .Type.IsPayment}}
 				Payment: {{.Amount}}
+			{{end}}
+			{{if .Type.IsInterest}}
+				Interest: {{.Amount}}
 			{{end}}
 			{{if .Type.IsLoan}}
 				Loan: {{.Amount}}
@@ -24,6 +27,7 @@ const paymentTemplateHTML = `
 				Rate change to: {{.Rate}}%
 			{{end}}
 			</td>
+			<td>{{.Owed}}</td>
 		</tr>
 	{{end}}
 	</table>
