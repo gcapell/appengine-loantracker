@@ -12,8 +12,15 @@ const paymentTemplateHTML = `
 	<table>
 	{{range .}}
 		<tr>
-			<td align="right">{{if .IsPayment}}{{.Amount}}{{else}}{{.Rate}}%{{end}}</td>
-			<td>{{.Date.Format "15:04 2 Jan 2006"}}</td>
+			<td>{{.Date.Format "2 Jan 2006"}}</td>
+			<td align="right">
+			{{if .Type.IsPayment}}
+				{{.Amount}}
+			{{end}}
+			{{if .Type.IsRateChange}}
+				Rate change to: {{.Rate}}%
+			{{end}}
+			</td>
 		</tr>
 	{{end}}
 	</table>

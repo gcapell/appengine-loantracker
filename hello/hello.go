@@ -12,13 +12,29 @@ import (
 	"strconv"
 )
 
-
 type Cents int
+
+type EntryType int
+
+const (
+	Payment EntryType = iota
+	Loan
+	RateChange
+	InterestApplied
+)
+
+func(e EntryType) IsPayment () bool {
+	return e == Payment
+}
+
+func (e EntryType) IsRateChange() bool {
+	return e == RateChange
+}
 
 type Entry struct {
 	Date	time.Time
 	User	string
-	IsPayment bool
+	Type	EntryType
 	Amount Cents
 	Rate	float32	// 3.5 -> 3.5%
 }
@@ -115,14 +131,14 @@ func getEntries(c appengine.Context) ([]Entry, error) {
 }
 
 func changeRate(w http.ResponseWriter, r *http.Request) error {
-	return addEntry(w,r, false)
+	return addEntry(w,r, RateChange)
 }
 
 func addPayment(w http.ResponseWriter, r *http.Request) error {
-	return addEntry(w,r, true)
+	return addEntry(w,r, Payment)
 }
 
-func addEntry(w http.ResponseWriter, r *http.Request, isPayment bool) error{
+func addEntry(w http.ResponseWriter, r *http.Request, t EntryType) error{
 	c := appengine.NewContext(r)
 	userName := ""
 	if u := user.Current(c); u != nil {
@@ -134,19 +150,20 @@ func addEntry(w http.ResponseWriter, r *http.Request, isPayment bool) error{
 		return err
 	}
 
-	e := Entry{Date:date, User:userName, IsPayment:isPayment}
-	if isPayment {
+	e := Entry{Date:date, User:userName, Type:t}
+	switch t {
+	case Payment:
 		amount, err := ParseCents(r.FormValue("amount"))
 		if err != nil {
 			return err
 		}
-		e = Entry{date, userName, isPayment, amount, 0}
-	} else {
+		e.Amount = amount
+	case RateChange:
 		rate, err := strconv.ParseFloat(r.FormValue("rate"), 32)
 		if err != nil {
 			return err
 		}
-		e = Entry{date, userName, isPayment, 0, float32(rate)}
+		e.Rate = float32(rate)
 	}
 
 	log.Println("entry", e)
