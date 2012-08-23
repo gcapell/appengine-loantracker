@@ -33,9 +33,11 @@ const paymentTemplateHTML = `
 	</table>
     <form action="/addPayment" method="post">
 	<table>
-	 <tr><td> Amount: </td><td><input type="text" name="amount"></td>
-	<td><input type="checkbox" name="IsLoan">IsLoan</td></tr>
 	 <tr><td>Date: </td><td><input type="text" name="date"></td></tr>
+	 <tr>
+		<td> Amount: </td><td><input type="text" name="amount"></td>
+		<td><input type="checkbox" name="IsLoan">IsLoan</td>
+	</tr>
 	</table>
       <div><input type="submit" value="Add amount"></div>
     </form>
