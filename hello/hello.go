@@ -98,9 +98,17 @@ func root(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusFound)
 		return nil
 	}
+	payments, err := getPayments(c)
+	if err != nil {
+		return err
+	}
+	return  paymentTemplate.Execute(w, payments)
+}
+
+func getPayments(c appengine.Context) ([]Payment, error) {
 	q := datastore.NewQuery("Payment").Order("Date")
 	
-	payments := make([]Payment, 0, 100)
+	var payments []Payment
 	for t := q.Run(c); ; {
 		var p Payment
 		key, err := t.Next(&p)
@@ -109,12 +117,13 @@ func root(w http.ResponseWriter, r *http.Request) error {
 			break
 		}
 		if err != nil {
-			return err
+			return nil, err
 		}
 		payments = append(payments, p)
 	}
-	return  paymentTemplate.Execute(w, payments)
+	return payments, nil
 }
+
 
 func changeRate(w http.ResponseWriter, r *http.Request) error {
 	c := appengine.NewContext(r)
