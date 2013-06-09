@@ -13,27 +13,21 @@ const paymentTemplateHTML = `
 	{{range .}}
 		<tr>
 			<td>{{.Date.Format "2 Jan 2006"}}</td>
-			<td align="right">
-			{{if .Type.IsPayment}}
-				Payment: {{.Amount}}
-			{{end}}
-			{{if .Type.IsInterest}}
-				Interest: {{.Amount}}
-			{{end}}
-			{{if .Type.IsLoan}}
-				Loan: {{.Amount}}
-			{{end}}
-			{{if .Type.IsRateChange}}
-				Rate change to: {{.Rate}}%
-			{{end}}
-			</td>
+			<td align="right">{{.Description}}: {{.ValueString}}</td>
 			<td>{{.Owed}}</td>
+			<td>{{if .Deletable}}
+			    <form action="/delete" method="post">
+			    <input type="hidden" name="KeyId" value="{{.Key.Encode}}">
+			    <input type="submit" value="delete">
+			    </form>
+			    {{end}}
+			</td>
 		</tr>
 	{{end}}
 	</table>
     <form action="/addPayment" method="post">
 	<table>
-	 <tr><td>Date: </td><td><input type="text" name="date"></td></tr>
+	 <tr><td>Date: </td><td><input type="date" name="date"></td></tr>
 	 <tr>
 		<td> Amount: </td><td><input type="text" name="amount"></td>
 		<td><input type="checkbox" name="IsLoan">IsLoan</td>

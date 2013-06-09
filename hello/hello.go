@@ -23,23 +23,30 @@ const (
 	InterestApplied
 )
 
-func(e EntryType) IsPayment () bool {
-	return e == Payment
+func (e *Entry) Deletable() bool {
+	return e.Key != nil  && time.Now().Sub(e.Date).Hours() < (14*24)
 }
 
-func (e EntryType) IsRateChange() bool {
-	return e == RateChange
+func (e *Entry) Description() string {
+	switch e.Type {
+		case Payment: return "Payment"
+		case Loan: return "Loan"
+		case RateChange: return "Rate Change"
+		case InterestApplied: return "Interest Applied"
+	}
+	log.Print("Unknown type:", e.Type)
+	return ""
 }
 
-func (e EntryType) IsLoan() bool {
-	return e == Loan
+func (e *Entry) ValueString() string {
+
+	switch e.Type {
+		case Payment,Loan, InterestApplied: return e.Amount.String()
+		case RateChange: return fmt.Sprintf("%.1f%%", e.Rate )
+	}
+	log.Print("Unknown type:", e.Type)
+	return ""	
 }
-
-func (e EntryType) IsInterest() bool {
-	return e == InterestApplied
-}
-
-
 type Entry struct {
 	Date	time.Time
 	User	string
@@ -47,6 +54,7 @@ type Entry struct {
 	Amount Cents
 	Rate	float32	// 3.5 -> 3.5%
 	Owed	Cents
+	Key     *datastore.Key
 }
 
 func (c Cents) String() string {
@@ -213,6 +221,7 @@ func getEntries(c appengine.Context) ([]Entry, error) {
 		if err != nil {
 			return nil, err
 		}
+		e.Key = key
 		i.add(e)
 	}
 	return i.entries, nil
@@ -233,7 +242,7 @@ func addEntry(w http.ResponseWriter, r *http.Request, t EntryType) error{
 		userName = u.String()
 	}
 
-	date, err := time.Parse("2 Jan 2006", r.FormValue("date"))
+	date, err := time.Parse("2006-01-02", r.FormValue("date"))
 	if err != nil {
 		return err
 	}
