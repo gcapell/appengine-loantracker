@@ -17,7 +17,7 @@ const paymentTemplateHTML = `
 			<td>{{.Owed}}</td>
 			<td>{{if .Deletable}}
 			    <form action="/delete" method="post">
-			    <input type="hidden" name="KeyId" value="{{.Key.Encode}}">
+			    <input type="hidden" name="KeyID" value="{{.Key.Encode}}">
 			    <input type="submit" value="delete">
 			    </form>
 			    {{end}}
@@ -49,7 +49,7 @@ const rateTemplateHTML = `
  <tr><td> Interest Rate: </td><td><input type="text" name="rate"></td>
 
 </tr>
- <tr><td>Date: </td><td><input type="text" name="date"></td></tr>
+ <tr><td>Date: </td><td><input type="date" name="date"></td></tr>
 </table>
   <div><input type="submit" value="Update interest rate"></div>
 </form>
