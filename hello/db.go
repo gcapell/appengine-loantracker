@@ -21,6 +21,9 @@ func getEntries(c appengine.Context) ([]Entry, error) {
 		if err != nil {
 			return nil, err
 		}
+		if e.Deleted {
+			continue
+		}
 		e.Key = key
 		i.add(e)
 	}

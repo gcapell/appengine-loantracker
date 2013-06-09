@@ -108,8 +108,13 @@ func deleter(w http.ResponseWriter, r *http.Request, c appengine.Context, u *use
 	if err != nil {
 		return err
 	}
-	err = datastore.Delete(c, key)
-	if err != nil {
+	var e Entry
+	if err = datastore.Get(c, key, &e); err != nil {
+		return err
+	}
+	e.Deleted = true
+	e.DeleteUser=u.String()
+	if _, err = datastore.Put(c, key, &e); err != nil {
 		return err
 	}
 	log.Print("redirecting")
