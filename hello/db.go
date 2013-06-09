@@ -1,14 +1,15 @@
 package hello
 
 import (
-		"appengine"
-		"log"
-		"appengine/datastore"
+	"appengine"
+	"appengine/datastore"
+	"log"
 )
+
 func getEntries(c appengine.Context) ([]Entry, error) {
 	q := datastore.NewQuery("Entry").Order("Date")
-	
-	i := new( InterestCalculator)
+
+	i := new(InterestCalculator)
 
 	for t := q.Run(c); ; {
 		var e Entry
@@ -25,4 +26,3 @@ func getEntries(c appengine.Context) ([]Entry, error) {
 	}
 	return i.entries, nil
 }
-

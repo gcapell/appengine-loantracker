@@ -39,6 +39,7 @@ const paymentTemplateHTML = `
   </body>
 </html>
 `
+
 var rateTemplate = template.Must(template.New("rate").Parse(rateTemplateHTML))
 
 const rateTemplateHTML = `

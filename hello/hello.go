@@ -4,11 +4,11 @@ import (
 	"appengine"
 	"appengine/datastore"
 	"appengine/user"
-	"net/http"
-	"time"
-	"log"
 	"fmt"
+	"log"
+	"net/http"
 	"strconv"
+	"time"
 )
 
 func init() {
@@ -35,7 +35,7 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusFound)
 		return
 	}
-	if err := fn(w,r,c,u); err != nil {
+	if err := fn(w, r, c, u); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -53,24 +53,24 @@ func root(w http.ResponseWriter, r *http.Request, c appengine.Context, u *user.U
 	if err != nil {
 		return err
 	}
-	return  paymentTemplate.Execute(w, entries)
+	return paymentTemplate.Execute(w, entries)
 }
 
 func changeRate(w http.ResponseWriter, r *http.Request, c appengine.Context, u *user.User) error {
-	return addEntry(w,r,c,u, RateChange)
+	return addEntry(w, r, c, u, RateChange)
 }
 
 func addPayment(w http.ResponseWriter, r *http.Request, c appengine.Context, u *user.User) error {
-	return addEntry(w,r,c,u, Payment)
+	return addEntry(w, r, c, u, Payment)
 }
 
-func addEntry(w http.ResponseWriter, r *http.Request,c appengine.Context, u *user.User, t EntryType) error{
+func addEntry(w http.ResponseWriter, r *http.Request, c appengine.Context, u *user.User, t EntryType) error {
 	date, err := time.Parse("2006-01-02", r.FormValue("date"))
 	if err != nil {
 		return err
 	}
 
-	e := Entry{Date:date, User:u.String(), Type:t}
+	e := Entry{Date: date, User: u.String(), Type: t}
 	switch t {
 	case Payment:
 		amount, err := ParseCents(r.FormValue("amount"))
@@ -116,4 +116,3 @@ func deleter(w http.ResponseWriter, r *http.Request, c appengine.Context, u *use
 	http.Redirect(w, r, "/", http.StatusFound)
 	return nil
 }
-
