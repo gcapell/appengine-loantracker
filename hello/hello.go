@@ -113,7 +113,7 @@ func deleter(w http.ResponseWriter, r *http.Request, c appengine.Context, u *use
 		return err
 	}
 	e.Deleted = true
-	e.DeleteUser=u.String()
+	e.DeleteUser = u.String()
 	if _, err = datastore.Put(c, key, &e); err != nil {
 		return err
 	}

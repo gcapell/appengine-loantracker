@@ -14,17 +14,16 @@ type Cents int
 type EntryType int
 
 type Entry struct {
-	Date   time.Time
-	User   string
-	Type   EntryType
-	Amount Cents
-	Rate   float32 // 3.5 -> 3.5%
-	Owed   Cents
-	Key    *datastore.Key
-	Deleted bool
+	Date       time.Time
+	User       string
+	Type       EntryType
+	Amount     Cents
+	Rate       float32 // 3.5 -> 3.5%
+	Owed       Cents
+	Key        *datastore.Key
+	Deleted    bool
 	DeleteUser string
 }
-
 
 const (
 	Payment EntryType = iota
